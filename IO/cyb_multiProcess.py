@@ -3,6 +3,8 @@ from . import hello
 from . import cyb_decorator
 from ..logger import logger
 from multiprocessing import Process, Pool, set_start_method
+from pathos.multiprocessing import ProcessingPool as Pool_
+import tqdm
 import os
 
 class MultiRun(object):
@@ -24,6 +26,19 @@ class MultiRun(object):
         self.args = args
         self.num_process = num_process
 
+    @cyb_decorator.func_run_time
+    def run_2(self):
+        res_list = []
+        with Pool(self.num_process) as p:
+            with tqdm.tqdm(total = len(self.args), desc='[multi run {} task]'.format(self.num_process)) as pbar:
+                #for i, res in tqdm.tqdm(enumerate(p.imap_unordered(self.func, self.args))):
+                for i, res in enumerate(p.imap(self.func, self.args)):
+                    pbar.update()
+                    res_list.append(res)
+        p.join()
+        return res_list
+
+    @cyb_decorator.func_run_time
     def run_1(self):
         '''
         Pool map
@@ -33,6 +48,7 @@ class MultiRun(object):
             #print(p.map(self.func, self.args))
             return p.map(self.func, self.args)
 
+    @cyb_decorator.func_run_time
     def run(self):
         '''
         Pool.apply_async, 可以对返回的结果增加一层处理函数，callback
@@ -67,14 +83,16 @@ if __name__=='__main__':
     import random
     random.seed(2019)
 
-    @cyb_decorator.func_run_time
+    #@cyb_decorator.func_run_time
     def func(s):
-        time.sleep(random.randint(10, 100) / 100.)
-        print(s)
+        #time.sleep(random.randint(10, 100) / 100.)
+        time.sleep(1)
+        #print(s)
         return s
 
     #print(type(func))
-    MR = MultiRun(func, [i for i in range(10)], num_process=3)
+    MR = MultiRun(func, [i for i in range(12)], num_process=3)
     #res= MR.run()
     #print(res)
     MR.run_1()
+    MR.run_2()
