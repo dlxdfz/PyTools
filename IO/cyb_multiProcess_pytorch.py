@@ -4,6 +4,11 @@ from . import cyb_decorator
 from ..logger import logger
 from multiprocessing import Process, Pool, set_start_method
 import os
+try:
+    #for pytorch
+    set_start_method('spawn')
+except RuntimeError:
+    raise
 
 class MultiRun(object):
     def __init__(self, func, args:list, num_process=3) -> list:
